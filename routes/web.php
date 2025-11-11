@@ -15,6 +15,10 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+Route::get('transactions/cancel-requests', [TransactionController::class, 'cancelRequests'])->name('transactions.cancel-requests');
+Route::post('transactions/{id}/approve-cancel', [TransactionController::class, 'approveCancel'])->name('transactions.approve-cancel');
+
+
 Auth::routes();
 
 Route::middleware(['auth'])->group(function () {
@@ -48,7 +52,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('reports/booking', [ReportController::class, 'booking'])->name('reports.booking');
         Route::get('reports/product', [ReportController::class, 'product'])->name('reports.product');
         Route::get('reports/export-omset', [ReportController::class, 'exportOmset'])->name('reports.export-omset');
-        
+
+        Route::get('transactions/cancel-requests', [TransactionController::class, 'cancelRequests'])->name('transactions.cancel-requests');
+        Route::post('transactions/{id}/approve-cancel', [TransactionController::class, 'approveCancel'])->name('transactions.approve-cancel');
+
         // User Management
         Route::resource('users', UserController::class);
     });

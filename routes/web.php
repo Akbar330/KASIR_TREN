@@ -1,15 +1,16 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\BookingController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\LapanganController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -29,6 +30,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('transactions/check-availability', [TransactionController::class, 'checkAvailability'])->name('transactions.check-availability');
     Route::get('transactions/{id}/print', [TransactionController::class, 'print'])->name('transactions.print');
     Route::put('transactions/{id}/status', [TransactionController::class, 'updateStatus'])->name('transactions.update-status');
+
+    // Diskon - Admin & Kasir
+    Route::resource('discounts', DiscountController::class);
 
     // Booking - Admin & Kasir
     Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');

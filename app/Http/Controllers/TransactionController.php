@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Lapangan;
 use App\Models\Transaction;
+use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Models\TransactionDetail;
@@ -25,11 +26,15 @@ class TransactionController extends Controller
 
     public function create()
     {
+        $discounts = Discount::where('aktif', true)
+            ->whereDate('tanggal_mulai', '<=', now())
+            ->whereDate('tanggal_selesai', '>=', now())
+            ->get();
         $customers = Customer::all();
         $lapangan = Lapangan::where('status', 'aktif')->get();
         $products = Product::where('stok', '>', 0)->get();
 
-        return view('transactions.create', compact('customers', 'lapangan', 'products'));
+        return view('transactions.create', compact('customers', 'lapangan', 'products', 'discounts'));
     }
 
     public function checkAvailability(Request $request)
@@ -61,7 +66,11 @@ class TransactionController extends Controller
             'jam_mulai' => 'required',
             'jam_selesai' => 'required|after:jam_mulai',
             'bayar' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,transfer,qris'
+            'payment_method' => 'required|in:cash,transfer,qris',
+            'subtotal' => 'required|numeric',
+            'discount_amount' => 'nullable|numeric',
+            'total_amount' => 'required|numeric',
+            'discount_id' => 'nullable|exists:discounts,id', // ✅ Validasi discount_id
         ]);
 
         DB::beginTransaction();
@@ -94,30 +103,10 @@ class TransactionController extends Controller
                 }
             }
 
-            // 👇 Tambahan Diskon
-            $discountType = $request->discount_type ?? 'none';
-            $discountPercent = 0;
-
-            switch ($discountType) {
-                case 'akhir_tahun':
-                    $discountPercent = 10;
-                    break;
-                case 'kemerdekaan':
-                    $discountPercent = 17;
-                    break;
-                case 'tahun_baru':
-                    $discountPercent = 15;
-                    break;
-                case 'hari_spesial':
-                    $discountPercent = 5;
-                    break;
-                default:
-                    $discountPercent = 0;
-            }
-
-            $subtotal = $subtotal_lapangan + $subtotal_produk;
-            $discountAmount = ($discountPercent / 100) * $subtotal;
-            $total = $subtotal - $discountAmount;
+            // ✅ AMBIL DATA DISKON DARI HIDDEN INPUT (dihitung di frontend)
+            $subtotal = $request->subtotal; // Dari hidden input
+            $discountAmount = $request->discount_amount ?? 0; // Dari hidden input
+            $total = $request->total_amount; // Dari hidden input
 
             $bayar = $request->bayar;
             $kembalian = $bayar - $total;
@@ -139,9 +128,8 @@ class TransactionController extends Controller
                 'subtotal_lapangan' => $subtotal_lapangan,
                 'subtotal_produk' => $subtotal_produk,
 
-                // 👇 Tambahan Diskon disimpan ke DB
-                'discount_type' => $discountType,
-                'discount_percent' => $discountPercent,
+                // ✅ SIMPAN DISCOUNT_ID JIKA ADA
+                'discount_id' => $request->discount_id,
                 'discount_amount' => $discountAmount,
 
                 'total' => $total,
@@ -183,7 +171,7 @@ class TransactionController extends Controller
 
     public function print($id)
     {
-        $transaction = Transaction::with(['customer', 'lapangan', 'user', 'details.product'])
+        $transaction = Transaction::with(['customer', 'lapangan', 'user', 'details.product', 'discount']) // ✅ Tambah 'discount'
             ->findOrFail($id);
 
         return view('transactions.print', compact('transaction'));

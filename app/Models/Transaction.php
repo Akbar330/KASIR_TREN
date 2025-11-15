@@ -57,6 +57,13 @@ class Transaction extends Model
         return $this->hasMany(TransactionDetail::class);
     }
 
+    // app/Models/Transaction.php
+    public function discount()
+    {
+        return $this->belongsTo(Discount::class, 'discount_id');
+    }
+
+
     public static function generateKodeTransaksi()
     {
         $prefix = 'TRX';

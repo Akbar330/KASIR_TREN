@@ -107,14 +107,18 @@
 
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Pilih Diskon</label>
-                    <select name="discount_type" id="discount_type" class="form-control">
-                        <option value="none" data-persentase="0">Tanpa Diskon</option>
-                        <option value="akhir_tahun" data-persentase="10">Diskon Akhir Tahun (10%)</option>
-                        <option value="kemerdekaan" data-persentase="17">Diskon Hari Kemerdekaan (17%)</option>
-                        <option value="tahun_baru" data-persentase="15">Diskon Tahun Baru (15%)</option>
-                        <option value="hari_spesial" data-persentase="5">Diskon Hari Spesial (5%)</option>
+                    <select name="discount_id" id="discount_id" class="form-control">
+                        <option value="">Tanpa Diskon</option>
+                        @foreach ($discounts as $diskon)
+                            <option value="{{ $diskon->id }}" data-type="{{ $diskon->type }}"
+                                data-value="{{ $diskon->value }}">
+                                {{ $diskon->kode_voucher }}
+                                ({{ $diskon->type == 'percent' ? $diskon->value . '%' : 'Rp ' . number_format($diskon->value, 0, ',', '.') }})
+                            </option>
+                        @endforeach
                     </select>
                 </div>
+
 
                 <div class="row">
                     <div class="col-md-6">
@@ -301,37 +305,71 @@
             function calculateTotal() {
                 const subtotal = totalLapangan + totalProduk;
 
-                // Ambil diskon dari dropdown
-                const selectedDiscount = $('#discount_type option:selected');
-                const discountPercent = parseFloat(selectedDiscount.data('persentase')) || 0;
-                const discountAmount = subtotal * (discountPercent / 100);
+                // Ambil data diskon
+                const selected = $('#discount_id').find(':selected');
+                const type = selected.data('type');
+                const value = parseFloat(selected.data('value')) || 0;
 
-                // Total akhir setelah potongan
-                const total = subtotal - discountAmount;
+                let potongan = 0;
+                let persenDiskon = 0;
+
+                if (type === 'percent') {
+                    persenDiskon = value;
+                    potongan = subtotal * (value / 100);
+                } else if (type === 'amount') {
+                    potongan = value;
+                    // Hitung persen dari potongan
+                    if (subtotal > 0) {
+                        persenDiskon = (potongan / subtotal) * 100;
+                    }
+                }
+
+                const total = subtotal - potongan;
 
                 // Update tampilan
-                $('#diskonPersen').text(discountPercent + '%');
-                $('#potonganHarga').text('Rp ' + discountAmount.toLocaleString('id-ID'));
+                $('#diskonPersen').text(persenDiskon.toFixed(1) + '%');
+                $('#potonganHarga').text('Rp ' + potongan.toLocaleString('id-ID'));
                 $('#totalBayar').text('Rp ' + total.toLocaleString('id-ID'));
 
+                // ✅ Simpan nilai untuk dikirim ke database
+                updateHiddenInputs(subtotal, potongan, total);
+
+                // Hitung kembalian jika ada input bayar
                 calculateKembalian();
+            }
+
+            // ==============================
+            // UPDATE HIDDEN INPUTS
+            // ==============================
+            function updateHiddenInputs(subtotal, potongan, total) {
+                // Hapus input lama jika ada
+                $('#hiddenSubtotal, #hiddenDiscount, #hiddenTotal').remove();
+
+                // Tambahkan hidden inputs baru
+                $('#transactionForm').append(`
+            <input type="hidden" name="subtotal" id="hiddenSubtotal" value="${subtotal}">
+            <input type="hidden" name="discount_amount" id="hiddenDiscount" value="${potongan}">
+            <input type="hidden" name="total_amount" id="hiddenTotal" value="${total}">
+        `);
             }
 
             // ==============================
             // HITUNG KEMBALIAN
             // ==============================
             function calculateKembalian() {
+                const totalText = $('#totalBayar').text().replace(/[^0-9]/g, '');
+                const total = parseFloat(totalText) || 0;
                 const bayar = parseFloat($('#bayar').val()) || 0;
-                const selectedDiscount = $('#discount_type option:selected');
-                const discountPercent = parseFloat(selectedDiscount.data('persentase')) || 0;
-                const subtotal = totalLapangan + totalProduk;
-                const discountAmount = subtotal * (discountPercent / 100);
-                const total = subtotal - discountAmount;
 
                 const kembalian = bayar - total;
-                $('#kembalian').text('Rp ' + kembalian.toLocaleString('id-ID'));
-                $('#kembalian').toggleClass('text-danger', kembalian < 0);
-                $('#kembalian').toggleClass('text-success', kembalian >= 0);
+
+                if (kembalian >= 0) {
+                    $('#kembalian').text('Rp ' + kembalian.toLocaleString('id-ID'));
+                    $('#kembalian').removeClass('text-danger').addClass('text-success');
+                } else {
+                    $('#kembalian').text('Kurang Rp ' + Math.abs(kembalian).toLocaleString('id-ID'));
+                    $('#kembalian').removeClass('text-success').addClass('text-danger');
+                }
             }
 
             // ==============================
@@ -349,6 +387,11 @@
             });
 
             $('#bayar').on('input', calculateKembalian);
+
+            // Event listener untuk diskon
+            $('#discount_id').change(function() {
+                calculateTotal();
+            });
 
             // Tambah produk
             $('#addProduct').click(function() {
@@ -370,11 +413,6 @@
 
             // Hitung produk saat input berubah
             $(document).on('change', '.product-select, .product-qty', calculateProduk);
-
-            // 👇 Update total kalau diskon diganti
-            $('#discount_type').change(function() {
-                calculateTotal();
-            });
 
             // Tambah customer via modal
             $('#addCustomerForm').submit(function(e) {

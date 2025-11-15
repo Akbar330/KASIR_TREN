@@ -267,6 +267,11 @@
                     <i class="fas fa-th-large"></i>
                     <span>Lapangan</span>
                 </a>
+
+                <a href="{{ route('discounts.index') }}" class="nav-link {{ request()->routeIs('lapangan.*') ? 'active' : '' }}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Lapangan</span>
+                </a>
                 
                 <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
                     <i class="fas fa-box"></i>

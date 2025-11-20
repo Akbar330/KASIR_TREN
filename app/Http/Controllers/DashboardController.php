@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Lapangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -27,14 +28,18 @@ class DashboardController extends Controller
         $today = Carbon::today();
         $thisMonth = Carbon::now()->startOfMonth();
 
-        // Omset hari ini
-        $omsetToday = Transaction::whereDate('created_at', $today)->sum('total');
-        
-        // Omset bulan ini
-        $omsetMonth = Transaction::where('created_at', '>=', $thisMonth)->sum('total');
+        // Omset hari ini (FILTER WAJIB: selesai)
+        $omsetToday = Transaction::whereDate('tanggal_main', $today)
+            ->where('status_booking', 'selesai')
+            ->sum('total');
+
+        // Omset bulan ini (FILTER WAJIB: selesai)
+        $omsetMonth = Transaction::where('tanggal_main', '>=', $thisMonth)
+            ->where('status_booking', 'selesai')
+            ->sum('total');
 
         // Total transaksi hari ini
-        $transaksiToday = Transaction::whereDate('created_at', $today)->count();
+        $transaksiToday = Transaction::whereDate('tanggal_main', $today)->count();
 
         // Lapangan paling sering dibooking
         $popularLapangan = Transaction::selectRaw('lapangan_id, COUNT(*) as total')
@@ -46,13 +51,21 @@ class DashboardController extends Controller
 
         // Grafik omset 7 hari terakhir
         $omsetChart = [];
+
         for ($i = 6; $i >= 0; $i--) {
+
+            // Wajib ada
             $date = Carbon::today()->subDays($i);
+
             $omsetChart[] = [
                 'date' => $date->format('d M'),
-                'total' => Transaction::whereDate('created_at', $date)->sum('total')
+                'total' => Transaction::whereDate(DB::raw('COALESCE(tanggal_main, created_at)'), $date)
+                    ->where('status_booking', 'selesai')
+                    ->sum('total')
             ];
         }
+
+
 
         // Produk stok menipis
         $lowStockProducts = Product::where('stok', '<=', 10)->orderBy('stok')->get();

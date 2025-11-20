@@ -83,9 +83,12 @@ class TransactionController extends Controller
             }
 
             // Hitung durasi
-            $jam_mulai = \Carbon\Carbon::parse($request->jam_mulai);
-            $jam_selesai = \Carbon\Carbon::parse($request->jam_selesai);
-            $durasi_jam = $jam_mulai->diffInHours($jam_selesai);
+            // Paksa jam ke format 24 jam (H:i)
+            $jam_mulai = \Carbon\Carbon::parse($request->jam_mulai)->format('H:i');
+            $jam_selesai = \Carbon\Carbon::parse($request->jam_selesai)->format('H:i');
+
+            // Hitung durasi
+            $durasi_jam = \Carbon\Carbon::parse($jam_mulai)->diffInHours(\Carbon\Carbon::parse($jam_selesai));
 
             // Hitung subtotal lapangan
             $subtotal_lapangan = $durasi_jam * $lapangan->harga_per_jam;
@@ -122,8 +125,8 @@ class TransactionController extends Controller
                 'customer_id' => $request->customer_id,
                 'lapangan_id' => $request->lapangan_id,
                 'tanggal_main' => $request->tanggal_main,
-                'jam_mulai' => $request->jam_mulai,
-                'jam_selesai' => $request->jam_selesai,
+                'jam_mulai' => $jam_mulai,
+                'jam_selesai' => $jam_selesai,
                 'durasi_jam' => $durasi_jam,
                 'subtotal_lapangan' => $subtotal_lapangan,
                 'subtotal_produk' => $subtotal_produk,
@@ -135,7 +138,7 @@ class TransactionController extends Controller
                 'total' => $total,
                 'bayar' => $bayar,
                 'kembalian' => $kembalian,
-                'status_booking' => 'pending',
+                'status_booking' => 'selesai',
                 'payment_method' => $request->payment_method
             ]);
 
@@ -200,9 +203,12 @@ class TransactionController extends Controller
         ]);
 
         // Hitung ulang durasi
-        $jam_mulai = \Carbon\Carbon::parse($request->jam_mulai);
-        $jam_selesai = \Carbon\Carbon::parse($request->jam_selesai);
-        $durasi_jam = $jam_mulai->diffInHours($jam_selesai);
+        // Paksa jam ke format 24 jam (H:i)
+        $jam_mulai = \Carbon\Carbon::parse($request->jam_mulai)->format('H:i');
+        $jam_selesai = \Carbon\Carbon::parse($request->jam_selesai)->format('H:i');
+
+        // Hitung durasi
+        $durasi_jam = \Carbon\Carbon::parse($jam_mulai)->diffInHours(\Carbon\Carbon::parse($jam_selesai));
 
         $lapangan = Lapangan::findOrFail($request->lapangan_id);
         $subtotal_lapangan = $durasi_jam * $lapangan->harga_per_jam;
@@ -212,8 +218,8 @@ class TransactionController extends Controller
             'customer_id' => $request->customer_id,
             'lapangan_id' => $request->lapangan_id,
             'tanggal_main' => $request->tanggal_main,
-            'jam_mulai' => $request->jam_mulai,
-            'jam_selesai' => $request->jam_selesai,
+            'jam_mulai' => $jam_mulai,
+            'jam_selesai' => $jam_selesai,
             'durasi_jam' => $durasi_jam,
             'subtotal_lapangan' => $subtotal_lapangan,
             'payment_method' => $request->payment_method,

@@ -15,11 +15,11 @@ class BookingController extends Controller
         $lapangan_id = $request->input('lapangan_id');
 
         $lapangans = Lapangan::where('status', 'aktif')->get();
-        
+
         $bookings = Transaction::with(['customer', 'lapangan', 'user'])
             ->where('tanggal_main', $tanggal)
-            ->where('status_booking', 'pending')
-            ->when($lapangan_id, function($query) use ($lapangan_id) {
+            ->whereIn('status_booking', ['pending', 'aktif', 'selesai'])
+            ->when($lapangan_id, function ($query) use ($lapangan_id) {
                 return $query->where('lapangan_id', $lapangan_id);
             })
             ->orderBy('jam_mulai')
@@ -40,7 +40,7 @@ class BookingController extends Controller
         $bookings = Transaction::with(['customer', 'lapangan'])
             ->where('status_booking', 'pending')
             ->get()
-            ->map(function($booking) {
+            ->map(function ($booking) {
                 return [
                     'title' => $booking->customer->nama . ' - ' . $booking->lapangan->nama,
                     'start' => $booking->tanggal_main . ' ' . $booking->jam_mulai,

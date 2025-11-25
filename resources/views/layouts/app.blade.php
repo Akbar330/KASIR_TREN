@@ -21,7 +21,7 @@
     
     <style>
         :root {
-            --sidebar-width: 250px;
+            --sidebar-width: 260px;
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
@@ -37,28 +37,17 @@
             height: 100vh;
             width: var(--sidebar-width);
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.15);
             z-index: 1000;
-            overflow-y: auto;
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: #34495e;
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #3498db;
-            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
         }
         
         .sidebar-header {
             padding: 1.5rem 1rem;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
         
         .sidebar-header h4 {
@@ -73,19 +62,40 @@
             font-size: 0.85rem;
         }
         
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        
         .sidebar .nav-link {
             color: #ecf0f1;
             padding: 12px 20px;
-            margin: 5px 15px;
+            margin: 4px 15px;
             border-radius: 8px;
             transition: all 0.3s;
             display: flex;
             align-items: center;
+            text-decoration: none;
         }
         
         .sidebar .nav-link i {
             width: 20px;
             margin-right: 10px;
+            text-align: center;
         }
         
         .sidebar .nav-link:hover {
@@ -95,30 +105,30 @@
         }
         
         .sidebar .nav-link.active {
-            background-color: #3498db;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
         }
         
         .sidebar-divider {
             border-top: 1px solid rgba(255,255,255,0.1);
-            margin: 15px 0;
+            margin: 15px 15px;
         }
         
         .sidebar-title {
-            padding: 0 20px;
+            padding: 10px 20px 5px;
             color: #95a5a6;
             font-size: 0.75rem;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 10px;
+            letter-spacing: 0.5px;
         }
         
         .sidebar-footer {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
+            flex-shrink: 0;
             padding: 15px;
             background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
         .main-content {
@@ -146,8 +156,8 @@
         }
         
         .user-avatar {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: var(--primary-gradient);
             display: flex;
@@ -155,6 +165,7 @@
             justify-content: center;
             color: white;
             font-weight: 600;
+            font-size: 1.1rem;
         }
         
         .card {
@@ -179,6 +190,8 @@
         
         .btn-primary:hover {
             background: linear-gradient(135deg, #5568d3 0%, #63408a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         .badge {
@@ -186,10 +199,24 @@
             font-weight: 600;
         }
         
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
-                transition: transform 0.3s;
+                transition: transform 0.3s ease-in-out;
             }
             
             .sidebar.show {
@@ -203,19 +230,24 @@
             .sidebar-toggle {
                 display: block !important;
             }
+            
+            .top-navbar {
+                padding-left: 70px;
+            }
         }
         
-        .sidebar-toggle {
-            display: none;
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 1001;
-            background: var(--primary-gradient);
-            color: white;
+        /* Alert improvements */
+        .alert {
+            border-radius: 10px;
             border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
         }
     </style>
 </head>
@@ -234,69 +266,71 @@
                 <small>{{ auth()->user()->role->name }}</small>
             </div>
             
-            <nav class="nav flex-column mt-3">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                
-                <a href="{{ route('transactions.create') }}" class="nav-link {{ request()->routeIs('transactions.create') ? 'active' : '' }}">
-                    <i class="fas fa-cash-register"></i>
-                    <span>Transaksi Baru</span>
-                </a>
-                
-                <a href="{{ route('transactions.index') }}" class="nav-link {{ request()->routeIs('transactions.index') ? 'active' : '' }}">
-                    <i class="fas fa-receipt"></i>
-                    <span>Riwayat Transaksi</span>
-                </a>
-                
-                <a href="{{ route('bookings.index') }}" class="nav-link {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Jadwal Booking</span>
-                </a>
-                
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-title">Master Data</div>
-                
-                <a href="{{ route('customers.index') }}" class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
-                    <i class="fas fa-users"></i>
-                    <span>Customer</span>
-                </a>
-                
-                <a href="{{ route('lapangan.index') }}" class="nav-link {{ request()->routeIs('lapangan.*') ? 'active' : '' }}">
-                    <i class="fas fa-th-large"></i>
-                    <span>Lapangan</span>
-                </a>
+            <nav class="sidebar-nav">
+                <div class="nav flex-column">
+                    <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    
+                    <a href="{{ route('transactions.create') }}" class="nav-link {{ request()->routeIs('transactions.create') ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Transaksi Baru</span>
+                    </a>
+                    
+                    <a href="{{ route('transactions.index') }}" class="nav-link {{ request()->routeIs('transactions.index') ? 'active' : '' }}">
+                        <i class="fas fa-receipt"></i>
+                        <span>Riwayat Transaksi</span>
+                    </a>
+                    
+                    <a href="{{ route('bookings.index') }}" class="nav-link {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Jadwal Booking</span>
+                    </a>
+                    
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-title">Master Data</div>
+                    
+                    <a href="{{ route('customers.index') }}" class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                        <i class="fas fa-users"></i>
+                        <span>Customer</span>
+                    </a>
+                    
+                    <a href="{{ route('lapangan.index') }}" class="nav-link {{ request()->routeIs('lapangan.*') ? 'active' : '' }}">
+                        <i class="fas fa-th-large"></i>
+                        <span>Lapangan</span>
+                    </a>
 
-                <a href="{{ route('discounts.index') }}" class="nav-link {{ request()->routeIs('lapangan.*') ? 'active' : '' }}">
-                    <i class="fas fa-th-large"></i>
-                    <span>Lapangan</span>
-                </a>
-                
-                <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                    <i class="fas fa-box"></i>
-                    <span>Produk</span>
-                </a>
-                
-                @if(auth()->user()->isAdmin())
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-title">Admin Menu</div>
-                
-                <a href="{{ route('reports.omset') }}" class="nav-link {{ request()->routeIs('reports.omset') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Laporan Omset</span>
-                </a>
-                
-                <a href="{{ route('reports.product') }}" class="nav-link {{ request()->routeIs('reports.product') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Laporan Produk</span>
-                </a>
-                
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <i class="fas fa-user-cog"></i>
-                    <span>Kelola User</span>
-                </a>
-                @endif
+                    <a href="{{ route('discounts.index') }}" class="nav-link {{ request()->routeIs('discounts.*') ? 'active' : '' }}">
+                        <i class="fas fa-percent"></i>
+                        <span>Diskon</span>
+                    </a>
+                    
+                    <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                        <i class="fas fa-box"></i>
+                        <span>Produk</span>
+                    </a>
+                    
+                    @if(auth()->user()->isAdmin())
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-title">Admin Menu</div>
+                    
+                    <a href="{{ route('reports.omset') }}" class="nav-link {{ request()->routeIs('reports.omset') ? 'active' : '' }}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Laporan Omset</span>
+                    </a>
+                    
+                    <a href="{{ route('reports.product') }}" class="nav-link {{ request()->routeIs('reports.product') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Laporan Produk</span>
+                    </a>
+                    
+                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Kelola User</span>
+                    </a>
+                    @endif
+                </div>
             </nav>
             
             <div class="sidebar-footer">
@@ -407,7 +441,7 @@
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.sidebar-toggle');
             
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 768 && sidebar && toggle) {
                 if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
                     sidebar.classList.remove('show');
                 }

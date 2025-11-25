@@ -14,8 +14,14 @@ class BookingController extends Controller
         $tanggal = $request->input('tanggal', date('Y-m-d'));
         $lapangan_id = $request->input('lapangan_id');
 
-        $lapangans = Lapangan::where('status', 'aktif')->get();
+        // Jika user memilih lapangan → filter lapangan juga
+        $lapangans = Lapangan::when($lapangan_id, function ($q) use ($lapangan_id) {
+            return $q->where('id', $lapangan_id);
+        })
+            ->where('status', 'aktif')
+            ->get();
 
+        // Filter bookings
         $bookings = Transaction::with(['customer', 'lapangan', 'user'])
             ->where('tanggal_main', $tanggal)
             ->whereIn('status_booking', ['pending', 'aktif', 'selesai'])
@@ -32,7 +38,13 @@ class BookingController extends Controller
             $jadwal[] = $jam;
         }
 
-        return view('bookings.index', compact('bookings', 'lapangans', 'tanggal', 'jadwal', 'lapangan_id'));
+        return view('bookings.index', compact(
+            'bookings',
+            'lapangans',
+            'tanggal',
+            'jadwal',
+            'lapangan_id'
+        ));
     }
 
     public function calendar()

@@ -20,6 +20,7 @@ class Transaction extends Model
         'durasi_jam',
         'subtotal_lapangan',
         'subtotal_produk',
+        'discount_id',
         'discount_type',
         'discount_percent',
         'discount_amount',

@@ -15,8 +15,25 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Transaction::with(['customer', 'lapangan', 'user']);
+
+        // Filter tanggal (tanggal transaksi dibuat)
+        if ($request->filled('tanggal')) {
+            $query->whereDate('created_at', $request->tanggal);
+        }
+
+        // Filter status
+        if ($request->filled('status')) {
+            $query->where('status_booking', $request->status);
+        }
+
+        // Filter metode pembayaran
+        if ($request->filled('payment')) {
+            $query->where('payment_method', $request->payment);
+        }
+
         $transactions = Transaction::with(['customer', 'lapangan', 'user'])
             ->latest()
             ->paginate(20);

@@ -20,7 +20,7 @@
                         <th>Nilai</th>
                         <th>Periode</th>
                         <th>Status</th>
-                        <th>Dipakai</th>
+                        {{-- <th>Dipakai</th> --}}
                         <th width="150">Aksi</th>
                     </tr>
                 </thead>
@@ -53,7 +53,7 @@
                                     <span class="badge bg-secondary">Nonaktif</span>
                                 @endif
                             </td>
-                            <td>{{ $discount->digunakan }}/{{ $discount->max_penggunaan }}</td>
+                            {{-- <td>{{ $discount->digunakan }}/{{ $discount->max_penggunaan }}</td> --}}
                             <td>
                                 <a href="{{ route('discounts.edit', $discount->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>

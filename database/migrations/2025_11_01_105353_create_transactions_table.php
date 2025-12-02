@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2);
             $table->decimal('bayar', 10, 2);
             $table->decimal('kembalian', 10, 2);
-            $table->enum('status_booking', ['pending', 'selesai', 'dibatalkan'])->default('pending');
+            $table->enum('status_booking', ['pending','selesai','dibatalkan','pending_cancel']);
             $table->enum('payment_method', ['cash', 'transfer', 'qris']);
             $table->timestamps();
         });

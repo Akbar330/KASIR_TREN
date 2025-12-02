@@ -35,10 +35,10 @@
                     <label>Tanggal Selesai</label>
                     <input type="date" name="tanggal_selesai" class="form-control" value="{{ $discount->tanggal_selesai }}">
                 </div>
-                <div class="col-md-6 mb-3">
+                {{-- <div class="col-md-6 mb-3">
                     <label>Maksimal Penggunaan</label>
                     <input type="number" name="max_penggunaan" class="form-control" value="{{ $discount->max_penggunaan }}">
-                </div>
+                </div> --}}
                 <div class="col-md-6 mb-3">
                     <label>Status</label>
                     <select name="aktif" class="form-control">

@@ -29,8 +29,8 @@
                 <label>Berakhir</label>
                 <input type="date" name="tanggal_selesai" class="form-control">
 
-                <label>Kuota</label>
-                <input type="number" name="max_penggunaan" class="form-control">
+                {{-- <label>Kuota</label>
+                <input type="number" name="max_penggunaan" class="form-control"> --}}
 
                 <button type="submit" class="btn btn-primary mt-3">Simpan</button>
             </form>

@@ -10,6 +10,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KategoriLapangController;
 use App\Http\Controllers\TransactionController;
 
 Route::get('/', function () {
@@ -20,14 +21,15 @@ Route::get('transactions/cancel-requests', [TransactionController::class, 'cance
 Route::post('transactions/{id}/approve-cancel', [TransactionController::class, 'approveCancel'])->name('transactions.approve-cancel');
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Transaksi - Admin & Kasir
     Route::resource('transactions', TransactionController::class);
-    Route::post('transactions/check-availability', [TransactionController::class, 'checkAvailability'])->name('transactions.check-availability');
+    Route::post('/transactions/check-availability', [TransactionController::class, 'checkAvailability'])
+        ->name('transactions.check-availability');
     Route::get('transactions/{id}/print', [TransactionController::class, 'print'])->name('transactions.print');
     Route::put('transactions/{id}/status', [TransactionController::class, 'updateStatus'])->name('transactions.update-status');
 
@@ -47,7 +49,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
 
     // Lapangan - Admin & Kasir
-    Route::resource('lapangan', LapanganController::class);
+    Route::resource('lapangan', LapanganController::class)->except(['show']);
+    Route::get('/lapangan/filter', [LapanganController::class, 'getByKategori'])->name('lapangan.filter');
 
     // Routes khusus Admin
     Route::middleware(['role:Admin'])->group(function () {
@@ -62,5 +65,7 @@ Route::middleware(['auth'])->group(function () {
 
         // User Management
         Route::resource('users', UserController::class);
+        ///ategorii emememem
+        Route::resource('kategori-lapangan', KategoriLapangController::class);
     });
 });

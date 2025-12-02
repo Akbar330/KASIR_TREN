@@ -8,11 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Lapangan extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'lapangan';
-    
+
     protected $fillable = [
-        'nama', 'jenis', 'harga_per_jam', 'status', 'keterangan'
+        'nama',
+        'kategori_lapangs_id',
+        'harga_per_jam',
+        'status',
+        'keterangan'
     ];
 
     public function transactions()
@@ -25,14 +29,19 @@ class Lapangan extends Model
         return !$this->transactions()
             ->where('tanggal_main', $tanggal)
             ->where('status_booking', 'pending')
-            ->where(function($query) use ($jam_mulai, $jam_selesai) {
+            ->where(function ($query) use ($jam_mulai, $jam_selesai) {
                 $query->whereBetween('jam_mulai', [$jam_mulai, $jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$jam_mulai, $jam_selesai])
-                      ->orWhere(function($q) use ($jam_mulai, $jam_selesai) {
-                          $q->where('jam_mulai', '<=', $jam_mulai)
+                    ->orWhereBetween('jam_selesai', [$jam_mulai, $jam_selesai])
+                    ->orWhere(function ($q) use ($jam_mulai, $jam_selesai) {
+                        $q->where('jam_mulai', '<=', $jam_mulai)
                             ->where('jam_selesai', '>=', $jam_selesai);
-                      });
+                    });
             })
             ->exists();
+    }
+
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriLapang::class, 'kategori_lapangs_id', 'id');
     }
 }

@@ -35,12 +35,18 @@
                         <label class="form-label">Lapangan <span class="text-danger">*</span></label>
                         <select name="lapangan_id" id="lapangan_id" class="form-control" required>
                             <option value="">Pilih Lapangan</option>
-                            @foreach ($lapangan as $lap)
-                                <option value="{{ $lap->id }}" data-harga="{{ $lap->harga_per_jam }}">
-                                    {{ $lap->nama }} - {{ ucfirst(str_replace('_', ' ', $lap->jenis)) }} (Rp
-                                    {{ number_format($lap->harga_per_jam, 0, ',', '.') }}/jam)
-                                </option>
+
+                            @foreach ($lapangan as $jenis => $listLapangan)
+                                <optgroup label="{{ ucfirst(str_replace('_', ' ', $jenis)) }}">
+                                    @foreach ($listLapangan as $lap)
+                                        <option value="{{ $lap->id }}" data-harga="{{ $lap->harga_per_jam }}">
+                                            {{ $lap->nama }} (Rp
+                                            {{ number_format($lap->harga_per_jam, 0, ',', '.') }}/jam)
+                                        </option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
+
                         </select>
                     </div>
 

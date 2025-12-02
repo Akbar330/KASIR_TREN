@@ -48,7 +48,8 @@ class TransactionController extends Controller
             ->whereDate('tanggal_selesai', '>=', now())
             ->get();
         $customers = Customer::all();
-        $lapangan = Lapangan::where('status', 'aktif')->get();
+        $lapangan = Lapangan::where('status', operator: 'aktif')->get()->groupBy(fn($lap) => $lap->kategori->nama);;
+        // dd($lapangan);
         $products = Product::where('stok', '>', 0)->get();
 
         return view('transactions.create', compact('customers', 'lapangan', 'products', 'discounts'));
@@ -56,21 +57,60 @@ class TransactionController extends Controller
 
     public function checkAvailability(Request $request)
     {
-        $lapangan = Lapangan::find($request->lapangan_id);
+        $lapanganId = $request->lapangan_id;
+        $tanggalMain = $request->tanggal_main;
+        $jamMulai = $request->jam_mulai;
+        $jamSelesai = $request->jam_selesai;
 
-        if (!$lapangan) {
-            return response()->json(['available' => false, 'message' => 'Lapangan tidak ditemukan']);
+        // Debug: Log data yang diterima
+        \Log::info('Check Availability:', [
+            'lapangan_id' => $lapanganId,
+            'tanggal_main' => $tanggalMain,
+            'jam_mulai' => $jamMulai,
+            'jam_selesai' => $jamSelesai
+        ]);
+
+        // Cek apakah ada transaksi yang bentrok
+        $conflict = Transaction::where('lapangan_id', $lapanganId)
+            ->where('tanggal_main', $tanggalMain)
+            ->where('status_booking', '!=', 'dibatalkan') // 👈 Ubah dari 'status' ke 'status_booking'
+            ->where(function ($query) use ($jamMulai, $jamSelesai) {
+                $query->where(function ($q) use ($jamMulai, $jamSelesai) {
+                    // Case 1: Jam mulai booking baru berada di tengah booking lama
+                    $q->where('jam_mulai', '<', $jamSelesai)
+                        ->where('jam_mulai', '>=', $jamMulai);
+                })
+                    ->orWhere(function ($q) use ($jamMulai, $jamSelesai) {
+                        // Case 2: Jam selesai booking baru berada di tengah booking lama
+                        $q->where('jam_selesai', '>', $jamMulai)
+                            ->where('jam_selesai', '<=', $jamSelesai);
+                    })
+                    ->orWhere(function ($q) use ($jamMulai, $jamSelesai) {
+                        // Case 3: Booking baru melingkupi booking lama
+                        $q->where('jam_mulai', '>=', $jamMulai)
+                            ->where('jam_selesai', '<=', $jamSelesai);
+                    })
+                    ->orWhere(function ($q) use ($jamMulai, $jamSelesai) {
+                        // Case 4: Booking lama melingkupi booking baru
+                        $q->where('jam_mulai', '<=', $jamMulai)
+                            ->where('jam_selesai', '>=', $jamSelesai);
+                    });
+            })
+            ->get(); // 👈 Ubah dari exists() ke get() untuk debugging
+
+        // Debug: Log hasil query
+        \Log::info('Conflicting transactions:', $conflict->toArray());
+
+        if ($conflict->count() > 0) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Lapangan sudah dibooking pada waktu tersebut. Ada ' . $conflict->count() . ' booking yang bentrok.'
+            ]);
         }
 
-        $available = $lapangan->isAvailable(
-            $request->tanggal_main,
-            $request->jam_mulai,
-            $request->jam_selesai
-        );
-
         return response()->json([
-            'available' => $available,
-            'message' => $available ? 'Lapangan tersedia' : 'Lapangan sudah dibooking di jam tersebut'
+            'available' => true,
+            'message' => 'Lapangan tersedia'
         ]);
     }
 

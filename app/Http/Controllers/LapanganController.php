@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KategoriLapang;
 use App\Models\Lapangan;
 use Illuminate\Http\Request;
 
@@ -9,15 +10,17 @@ class LapanganController extends Controller
 {
     public function index()
     {
-        $lapangans = Lapangan::latest()->get();
-        return view('lapangan.index', compact('lapangans'));
+        $lapangans = Lapangan::with('kategori')->latest()->get();
+        $kategori = KategoriLapang::all();
+        return view('lapangan.index', compact('lapangans', 'kategori'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'nama' => 'required|string|max:255',
-            'jenis' => 'required|in:vinyl,rumput_sintetis,matras',
+            // 'jenis' => 'required|in:vinyl,rumput_sintetis,matras',
+            'kategori_lapangs_id' => 'required',
             'harga_per_jam' => 'required|numeric|min:0',
             'status' => 'required|in:aktif,maintenance',
             'keterangan' => 'nullable|string'
@@ -33,7 +36,8 @@ class LapanganController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255',
-            'jenis' => 'required|in:vinyl,rumput_sintetis,matras',
+            // 'jenis' => 'required|in:vinyl,rumput_sintetis,matras',
+            'kategori_lapangs_id' => 'required',
             'harga_per_jam' => 'required|numeric|min:0',
             'status' => 'required|in:aktif,maintenance',
             'keterangan' => 'nullable|string'

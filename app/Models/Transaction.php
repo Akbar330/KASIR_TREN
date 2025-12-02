@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Transaction extends Model
 {
@@ -66,18 +67,27 @@ class Transaction extends Model
 
 
     public static function generateKodeTransaksi()
-    {
+{
+    return DB::transaction(function () {
         $prefix = 'TRX';
         $date = date('Ymd');
-        $lastTransaction = self::whereDate('created_at', today())->latest()->first();
 
-        if ($lastTransaction) {
-            $lastNumber = intval(substr($lastTransaction->kode_transaksi, -4));
+        // LOCK supaya nggak race condition
+        $last = DB::table('transactions')
+            ->whereDate('created_at', today())
+            ->lockForUpdate()
+            ->latest('id')
+            ->first();
+
+        if ($last) {
+            $lastNumber = intval(substr($last->kode_transaksi, -4));
             $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
         } else {
             $newNumber = '0001';
         }
 
         return $prefix . $date . $newNumber;
-    }
+    });
+}
+
 }

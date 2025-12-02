@@ -12,21 +12,21 @@ class LapanganSeeder extends Seeder
         $lapangans = [
             [
                 'nama' => 'Lapangan A',
-                'jenis' => 'vinyl',
+                'kategori_lapangs_id' => 1,
                 'harga_per_jam' => 150000,
                 'status' => 'aktif',
                 'keterangan' => 'Lapangan vinyl standar internasional'
             ],
             [
                 'nama' => 'Lapangan B',
-                'jenis' => 'rumput_sintetis',
+                'kategori_lapangs_id' => 2,
                 'harga_per_jam' => 200000,
                 'status' => 'aktif',
                 'keterangan' => 'Lapangan rumput sintetis premium'
             ],
             [
                 'nama' => 'Lapangan C',
-                'jenis' => 'matras',
+                'kategori_lapangs_id' => 3,
                 'harga_per_jam' => 100000,
                 'status' => 'aktif',
                 'keterangan' => 'Lapangan matras untuk pemula'

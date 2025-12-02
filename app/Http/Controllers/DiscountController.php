@@ -26,7 +26,7 @@ class DiscountController extends Controller
             'value' => 'required|numeric',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'max_penggunaan' => 'required|integer',
+            // 'max_penggunaan' => 'required|integer',
         ]);
 
 
@@ -42,14 +42,16 @@ class DiscountController extends Controller
     public function update(Request $request, Discount $discount)
     {
         $request->validate([
-            'jenis' => 'required|in:persen,nominal',
-            'nilai' => 'required|numeric|min:0',
-            'mulai_berlaku' => 'required|date',
-            'berakhir' => 'required|date|after_or_equal:mulai_berlaku',
-            'kuota' => 'required|integer|min:1',
+            'kode_voucher' => 'required|unique:discounts,kode_voucher,' . $discount->id,
+            'type' => 'required|in:percent,amount',
+            'value' => 'required|numeric|min:0',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'aktif' => 'required|boolean',
         ]);
 
         $discount->update($request->all());
+
         return redirect()->route('discounts.index')->with('success', 'Diskon berhasil diperbarui.');
     }
 

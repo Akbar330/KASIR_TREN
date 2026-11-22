@@ -9,6 +9,8 @@ class Transaction extends Model
 {
     use HasFactory;
 
+    const STATUS_KUNCI = ['pending', 'aktif', 'selesai', 'pending_cancel'];
+
     protected $fillable = [
         'kode_transaksi',
         'user_id',

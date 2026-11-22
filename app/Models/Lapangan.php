@@ -20,19 +20,17 @@ class Lapangan extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function isAvailable($tanggal, $jam_mulai, $jam_selesai)
-    {
-        return !$this->transactions()
-            ->where('tanggal_main', $tanggal)
-            ->where('status_booking', 'pending')
-            ->where(function($query) use ($jam_mulai, $jam_selesai) {
-                $query->whereBetween('jam_mulai', [$jam_mulai, $jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$jam_mulai, $jam_selesai])
-                      ->orWhere(function($q) use ($jam_mulai, $jam_selesai) {
-                          $q->where('jam_mulai', '<=', $jam_mulai)
-                            ->where('jam_selesai', '>=', $jam_selesai);
-                      });
-            })
-            ->exists();
-    }
+    public function isAvailable($tanggal, $jam_mulai, $jam_selesai, $exceptId = null)
+{
+    $mulai   = \Carbon\Carbon::parse($jam_mulai)->format('H:i:s');
+    $selesai = \Carbon\Carbon::parse($jam_selesai)->format('H:i:s');
+
+    return !$this->transactions()
+        ->whereDate('tanggal_main', $tanggal)
+        ->whereIn('status_booking', Transaction::STATUS_KUNCI)
+        ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+        ->where('jam_mulai', '<', $selesai)
+        ->where('jam_selesai', '>', $mulai)
+        ->exists();
+}
 }

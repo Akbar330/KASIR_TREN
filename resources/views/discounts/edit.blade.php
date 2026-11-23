@@ -1,58 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Diskon / Voucher')
+@section('title', 'Edit Voucher')
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <i class="fas fa-edit me-2"></i>Edit Diskon / Voucher
-    </div>
-    <div class="card-body">
-        <form action="{{ route('discounts.update', $discount->id) }}" method="POST">
-            @csrf
-            @method('PUT')
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label>Kode Voucher</label>
-                    <input type="text" name="kode_voucher" class="form-control" value="{{ $discount->kode_voucher }}" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label>Jenis Diskon</label>
-                    <select name="type" class="form-control">
-                        <option value="percent" {{ $discount->type == 'percent' ? 'selected' : '' }}>Persen (%)</option>
-                        <option value="amount" {{ $discount->type == 'amount' ? 'selected' : '' }}>Nominal (Rp)</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label>Nilai Diskon</label>
-                    <input type="number" step="0.01" name="value" class="form-control" value="{{ $discount->value }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label>Tanggal Mulai</label>
-                    <input type="date" name="tanggal_mulai" class="form-control" value="{{ $discount->tanggal_mulai }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label>Tanggal Selesai</label>
-                    <input type="date" name="tanggal_selesai" class="form-control" value="{{ $discount->tanggal_selesai }}">
-                </div>
-                {{-- <div class="col-md-6 mb-3">
-                    <label>Maksimal Penggunaan</label>
-                    <input type="number" name="max_penggunaan" class="form-control" value="{{ $discount->max_penggunaan }}">
-                </div> --}}
-                <div class="col-md-6 mb-3">
-                    <label>Status</label>
-                    <select name="aktif" class="form-control">
-                        <option value="1" {{ $discount->aktif ? 'selected' : '' }}>Aktif</option>
-                        <option value="0" {{ !$discount->aktif ? 'selected' : '' }}>Nonaktif</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="text-end">
-                <a href="{{ route('discounts.index') }}" class="btn btn-secondary">Batal</a>
-                <button type="submit" class="btn btn-primary">Update</button>
-            </div>
-        </form>
-    </div>
-</div>
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4"><div><p class="text-success fw-bold small text-uppercase mb-1">Promosi</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Edit voucher</h2><p class="text-muted mb-0">Perbarui nilai, masa berlaku, atau status voucher.</p></div><a href="{{ route('discounts.index') }}" class="btn btn-light border"><i class="fas fa-arrow-left me-2"></i>Kembali</a></div>
+<div class="row justify-content-center"><div class="col-xl-8"><div class="card"><div class="card-header d-flex justify-content-between align-items-center"><div><strong>{{ $discount->kode_voucher }}</strong><div class="text-muted small fw-normal mt-1">Voucher #{{ $discount->id }}</div></div><span class="badge {{ $discount->aktif?'bg-success':'bg-secondary' }}">{{ $discount->aktif?'Aktif':'Nonaktif' }}</span></div><div class="card-body"><form action="{{ route('discounts.update',$discount->id) }}" method="POST">@csrf @method('PUT')
+    <div class="row g-3"><div class="col-md-6"><label for="kode_voucher" class="form-label">Kode voucher</label><input id="kode_voucher" type="text" name="kode_voucher" value="{{ old('kode_voucher',$discount->kode_voucher) }}" class="form-control text-uppercase" required maxlength="255"></div>
+    <div class="col-md-6"><label for="type" class="form-label">Jenis diskon</label><select id="type" name="type" class="form-select" required><option value="percent" @selected(old('type',$discount->type)==='percent')>Persentase (%)</option><option value="amount" @selected(old('type',$discount->type)==='amount')>Potongan nominal (Rp)</option></select></div>
+    <div class="col-md-6"><label for="value" class="form-label">Nilai diskon</label><div class="input-group"><input id="value" type="number" step="0.01" min="0" name="value" value="{{ old('value',$discount->value) }}" class="form-control" required><span class="input-group-text" id="valueUnit">%</span></div><small class="text-muted" id="valueHint"></small></div>
+    <div class="col-md-6"><label class="form-label d-block">Periode berlaku</label><div class="d-flex align-items-center gap-2"><input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai',$discount->tanggal_mulai) }}" class="form-control" required aria-label="Tanggal mulai"><span class="text-muted">s.d.</span><input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai',$discount->tanggal_selesai) }}" class="form-control" required aria-label="Tanggal selesai"></div></div>
+    <div class="col-md-6"><label for="aktif" class="form-label">Status voucher</label><select id="aktif" name="aktif" class="form-select"><option value="1" @selected(old('aktif',(int)$discount->aktif) == 1)>Aktif</option><option value="0" @selected(old('aktif',(int)$discount->aktif) == 0)>Nonaktif</option></select></div></div>
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top"><a href="{{ route('discounts.index') }}" class="btn btn-light border">Batal</a><button class="btn btn-primary"><i class="fas fa-check me-2"></i>Simpan perubahan</button></div>
+</form></div></div></div></div>
 @endsection
+
+@push('scripts')
+<script>const discountType=document.getElementById('type'),unit=document.getElementById('valueUnit'),value=document.getElementById('value'),hint=document.getElementById('valueHint');function updateDiscountUnit(){const percent=discountType.value==='percent';unit.textContent=percent?'%':'Rp';value.removeAttribute('max');if(percent)value.max='100';hint.textContent=percent?'Maksimal diskon 100%.':'Potongan nominal dalam rupiah.'}discountType.addEventListener('change',updateDiscountUnit);updateDiscountUnit();document.getElementById('kode_voucher').addEventListener('input',function(){this.value=this.value.toUpperCase().replace(/\s+/g,'')});</script>
+@endpush

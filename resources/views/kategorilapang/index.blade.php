@@ -3,6 +3,7 @@
 @section('title', 'Kategori Lapangan')
 
 @section('content')
+<div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Pengaturan fasilitas</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Kategori lapangan</h2><p class="text-muted mb-0">Kelompokkan lapangan agar mudah dikelola dan dipilih saat transaksi.</p></div>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-tags me-2"></i>Data Kategori Lapangan</span>
@@ -112,10 +113,10 @@
 
 @push('scripts')
 <script>
-function editKategori(k) {
+window.editKategori = function(k) {
     $('#editKategoriForm').attr('action', '/kategori-lapangan/' + k.id);
     $('#edit_nama').val(k.nama);
     $('#editKategoriModal').modal('show');
-}
+};
 </script>
 @endpush

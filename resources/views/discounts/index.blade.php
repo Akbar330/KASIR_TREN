@@ -3,6 +3,7 @@
 @section('title', 'Daftar Diskon / Voucher')
 
 @section('content')
+<div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Promosi</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Voucher & diskon</h2><p class="text-muted mb-0">Kelola kode promosi dan masa aktifnya.</p></div>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-tags me-2"></i>Daftar Diskon / Voucher</span>
@@ -11,8 +12,9 @@
         </a>
     </div>
     <div class="card-body">
+        <div class="row mb-3"><div class="col-md-5 col-lg-4"><div class="input-group"><span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span><input type="search" class="form-control" data-table-search="#discountTable" placeholder="Cari kode voucher..."></div></div><div class="col-md-7 col-lg-8 d-flex align-items-center"><small class="text-muted">{{ $discounts->count() }} voucher</small></div></div>
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="discountTable">
                 <thead class="table-light">
                     <tr>
                         <th>Kode Voucher</th>
@@ -43,8 +45,8 @@
                                 @endif
                             </td>
                             <td>
-                                {{ $discount->tanggal_mulai ?? '-' }} s/d 
-                                {{ $discount->tanggal_selesai ?? '-' }}
+                        {{ $discount->tanggal_mulai ? \Carbon\Carbon::parse($discount->tanggal_mulai)->format('d M Y') : '-' }} s.d.
+                                {{ $discount->tanggal_selesai ? \Carbon\Carbon::parse($discount->tanggal_selesai)->format('d M Y') : '-' }}
                             </td>
                             <td>
                                 @if($discount->aktif)
@@ -67,7 +69,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted">Belum ada voucher, jir</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-5"><i class="fas fa-tags fa-2x d-block mb-3"></i>Belum ada voucher. Buat voucher pertama untuk mulai memberikan promosi.</td></tr>
                     @endforelse
                 </tbody>
             </table>

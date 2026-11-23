@@ -1,41 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Buat Diskon Baru')
+@section('title', 'Buat Voucher')
 
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <i class="fas fa-plus me-2"></i>Buat Diskon / Voucher Baru
-        </div>
-        <div class="card-body">
-            <form action="{{ route('discounts.store') }}" method="POST">
-                @csrf
-
-                <label>Kode Voucher</label>
-                <input type="text" name="kode_voucher" class="form-control">
-
-                <label>Jenis</label>
-                <select name="type" class="form-control">
-                    <option value="percent">Persen</option>
-                    <option value="amount">Nominal</option>
-                </select>
-
-                <label>Nilai</label>
-                <input type="number" step="0.01" name="value" class="form-control">
-
-                <label>Mulai Berlaku</label>
-                <input type="date" name="tanggal_mulai" class="form-control">
-
-                <label>Berakhir</label>
-                <input type="date" name="tanggal_selesai" class="form-control">
-
-                {{-- <label>Kuota</label>
-                <input type="number" name="max_penggunaan" class="form-control"> --}}
-
-                <button type="submit" class="btn btn-primary mt-3">Simpan</button>
-            </form>
-
-
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4"><div><p class="text-success fw-bold small text-uppercase mb-1">Promosi</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Buat voucher diskon</h2><p class="text-muted mb-0">Atur kode dan periode promosi untuk pelanggan.</p></div><a href="{{ route('discounts.index') }}" class="btn btn-light border"><i class="fas fa-arrow-left me-2"></i>Kembali</a></div>
+<div class="row justify-content-center"><div class="col-xl-8"><div class="card"><div class="card-header"><strong>Informasi voucher</strong><div class="text-muted small fw-normal mt-1">Kode voucher akan terlihat di kasir saat transaksi dibuat.</div></div><div class="card-body"><form action="{{ route('discounts.store') }}" method="POST">@csrf
+    <div class="row g-3"><div class="col-md-6"><label for="kode_voucher" class="form-label">Kode voucher</label><input id="kode_voucher" type="text" name="kode_voucher" value="{{ old('kode_voucher') }}" class="form-control text-uppercase @error('kode_voucher') is-invalid @enderror" required maxlength="255" placeholder="CONTOH: HEMAT20">@error('kode_voucher')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+    <div class="col-md-6"><label for="type" class="form-label">Jenis diskon</label><select id="type" name="type" class="form-select @error('type') is-invalid @enderror" required><option value="percent" @selected(old('type','percent')==='percent')>Persentase (%)</option><option value="amount" @selected(old('type')==='amount')>Potongan nominal (Rp)</option></select></div>
+    <div class="col-md-6"><label for="value" class="form-label">Nilai diskon</label><div class="input-group"><input id="value" type="number" step="0.01" min="0.01" max="100" name="value" value="{{ old('value') }}" class="form-control @error('value') is-invalid @enderror" required placeholder="20"><span class="input-group-text" id="valueUnit">%</span>@error('value')<div class="invalid-feedback">{{ $message }}</div>@enderror</div><small class="text-muted" id="valueHint">Masukkan persentase potongan, maksimal 100%.</small></div>
+    <div class="col-md-6"><label class="form-label d-block">Periode berlaku</label><div class="d-flex align-items-center gap-2"><input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="form-control" required aria-label="Tanggal mulai"><span class="text-muted">s.d.</span><input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="form-control" required aria-label="Tanggal selesai"></div></div></div>
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top"><a href="{{ route('discounts.index') }}" class="btn btn-light border">Batal</a><button class="btn btn-primary"><i class="fas fa-check me-2"></i>Simpan voucher</button></div>
+</form></div></div></div></div>
 @endsection
+
+@push('scripts')
+<script>const discountType=document.getElementById('type'),unit=document.getElementById('valueUnit'),value=document.getElementById('value'),hint=document.getElementById('valueHint');function updateDiscountUnit(){const percent=discountType.value==='percent';unit.textContent=percent?'%':'Rp';value.removeAttribute('max');if(percent)value.max='100';hint.textContent=percent?'Masukkan persentase potongan, maksimal 100%.':'Masukkan nominal potongan dalam rupiah.'}discountType.addEventListener('change',updateDiscountUnit);updateDiscountUnit();document.getElementById('kode_voucher').addEventListener('input',function(){this.value=this.value.toUpperCase().replace(/\s+/g,'')});</script>
+@endpush

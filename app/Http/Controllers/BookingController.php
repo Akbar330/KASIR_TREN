@@ -50,13 +50,13 @@ class BookingController extends Controller
     public function calendar()
     {
         $bookings = Transaction::with(['customer', 'lapangan'])
-            ->where('status_booking', 'pending')
+            ->whereIn('status_booking', ['pending', 'selesai', 'pending_cancel'])
             ->get()
             ->map(function ($booking) {
                 return [
                     'title' => $booking->customer->nama . ' - ' . $booking->lapangan->nama,
-                    'start' => $booking->tanggal_main . ' ' . $booking->jam_mulai,
-                    'end' => $booking->tanggal_main . ' ' . $booking->jam_selesai,
+                    'start' => Carbon::parse($booking->tanggal_main . ' ' . $booking->jam_mulai)->toIso8601String(),
+                    'end' => Carbon::parse($booking->tanggal_main . ' ' . $booking->jam_selesai)->toIso8601String(),
                     'backgroundColor' => $this->getColorByLapangan($booking->lapangan_id),
                     'borderColor' => $this->getColorByLapangan($booking->lapangan_id),
                 ];

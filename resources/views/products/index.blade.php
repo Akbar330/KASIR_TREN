@@ -3,6 +3,7 @@
 @section('title', 'Data Produk')
 
 @section('content')
+<div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Persediaan</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Produk & stok</h2><p class="text-muted mb-0">Pantau stok, harga, dan produk yang tersedia di kasir.</p></div>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-box me-2"></i>Data Produk</span>
@@ -11,6 +12,7 @@
         </button>
     </div>
     <div class="card-body">
+        <div class="row g-2 align-items-center mb-3"><div class="col-md-5 col-lg-4"><div class="input-group"><span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span><input type="search" class="form-control" data-table-search="#productTable" placeholder="Cari produk atau barcode..."></div></div><div class="col-md-7 col-lg-8"><small class="text-muted">{{ $products->total() }} produk terdaftar</small></div></div>
         <!-- Filter Kategori -->
         <div class="mb-3">
             <div class="btn-group" role="group">
@@ -22,7 +24,7 @@
         </div>
         
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="productTable">
                 <thead class="table-light">
                     <tr>
                         <th width="50">#</th>
@@ -177,7 +179,7 @@
 
 @push('scripts')
 <script>
-function editProduct(product) {
+window.editProduct = function(product) {
     $('#editProductForm').attr('action', '/products/' + product.id);
     $('#edit_nama').val(product.nama);
     $('#edit_kategori').val(product.kategori);
@@ -185,6 +187,6 @@ function editProduct(product) {
     $('#edit_stok').val(product.stok);
     $('#edit_barcode').val(product.barcode);
     $('#editProductModal').modal('show');
-}
+};
 </script>
 @endpush

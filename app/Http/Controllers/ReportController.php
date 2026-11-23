@@ -16,10 +16,10 @@ class ReportController extends Controller
 
     public function omset(Request $request)
     {
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        [$startDate, $endDate, $rangeStart, $rangeEnd] = $this->resolveDateRange($request);
 
-        $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $transactions = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
+            ->where('status_booking', 'selesai')
             ->with(['customer', 'lapangan', 'user'])
             ->latest()
             ->get();
@@ -43,7 +43,7 @@ class ReportController extends Controller
         // Omset per lapangan
         $omsetPerLapangan = $transactions->groupBy('lapangan_id')->map(function($items) {
             return [
-                'lapangan' => $items->first()->lapangan->nama,
+                'lapangan' => $items->first()->lapangan?->nama ?? 'Lapangan tidak ditemukan',
                 'total' => $items->sum('subtotal_lapangan'),
                 'count' => $items->count()
             ];
@@ -58,11 +58,11 @@ class ReportController extends Controller
 
     public function product(Request $request)
     {
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        [$startDate, $endDate, $rangeStart, $rangeEnd] = $this->resolveDateRange($request);
 
-        $productSales = TransactionDetail::whereHas('transaction', function($query) use ($startDate, $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
+        $productSales = TransactionDetail::whereHas('transaction', function($query) use ($rangeStart, $rangeEnd) {
+            $query->whereBetween('created_at', [$rangeStart, $rangeEnd])
+                ->where('status_booking', 'selesai');
         })
         ->with('product')
         ->get()
@@ -84,10 +84,10 @@ class ReportController extends Controller
 
     public function exportOmset(Request $request)
     {
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        [$startDate, $endDate, $rangeStart, $rangeEnd] = $this->resolveDateRange($request);
 
-        $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $transactions = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
+            ->where('status_booking', 'selesai')
             ->with(['customer', 'lapangan', 'user'])
             ->latest()
             ->get();
@@ -107,13 +107,13 @@ class ReportController extends Controller
                 fputcsv($file, [
                     $transaction->kode_transaksi,
                     $transaction->created_at->format('d-m-Y H:i'),
-                    $transaction->customer->nama,
-                    $transaction->lapangan->nama,
+                    $transaction->customer?->nama ?? '-',
+                    $transaction->lapangan?->nama ?? '-',
                     $transaction->durasi_jam . ' jam',
                     $transaction->subtotal_lapangan,
                     $transaction->subtotal_produk,
                     $transaction->total,
-                    $transaction->user->name,
+                    $transaction->user?->name ?? '-',
                 ]);
             }
 
@@ -121,5 +121,23 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function resolveDateRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $startDate = $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $validated['end_date'] ?? Carbon::now()->toDateString();
+
+        return [
+            $startDate,
+            $endDate,
+            Carbon::parse($startDate)->startOfDay(),
+            Carbon::parse($endDate)->endOfDay(),
+        ];
     }
 }

@@ -3,6 +3,7 @@
 @section('title', 'Data Customer')
 
 @section('content')
+<div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Database pelanggan</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Pelanggan</h2><p class="text-muted mb-0">Kelola kontak dan riwayat pelanggan lapangan.</p></div>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-users me-2"></i>Data Customer</span>
@@ -11,6 +12,7 @@
         </button>
     </div>
     <div class="card-body">
+        <div class="row mb-3"><div class="col-md-5 col-lg-4"><div class="input-group"><span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span><input type="search" class="form-control" data-table-search="#customerTable" placeholder="Cari nama atau telepon..."></div></div><div class="col-md-7 col-lg-8 d-flex align-items-center"><small class="text-muted">Cari pada halaman yang sedang dibuka.</small></div></div>
         <div class="table-responsive">
             <table class="table table-hover" id="customerTable">
                 <thead class="table-light">
@@ -132,12 +134,12 @@
 
 @push('scripts')
 <script>
-function editCustomer(id, nama, no_telp, alamat) {
+window.editCustomer = function(id, nama, no_telp, alamat) {
     $('#editCustomerForm').attr('action', '/customers/' + id);
     $('#edit_nama').val(nama);
     $('#edit_no_telp').val(no_telp);
     $('#edit_alamat').val(alamat);
     $('#editCustomerModal').modal('show');
-}
+};
 </script>
 @endpush

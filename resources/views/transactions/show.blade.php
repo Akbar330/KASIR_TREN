@@ -3,6 +3,7 @@
 @section('title', 'Detail Transaksi')
 
 @section('content')
+<div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Rincian pesanan</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Detail transaksi</h2><p class="text-muted mb-0">Informasi pembayaran, pelanggan, dan booking lapangan.</p></div>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-info-circle me-2"></i>Detail Transaksi</span>

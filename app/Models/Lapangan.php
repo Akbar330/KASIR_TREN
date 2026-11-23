@@ -28,14 +28,10 @@ class Lapangan extends Model
     {
         return !$this->transactions()
             ->where('tanggal_main', $tanggal)
-            ->where('status_booking', 'pending')
+            ->where('status_booking', '!=', 'dibatalkan')
             ->where(function ($query) use ($jam_mulai, $jam_selesai) {
-                $query->whereBetween('jam_mulai', [$jam_mulai, $jam_selesai])
-                    ->orWhereBetween('jam_selesai', [$jam_mulai, $jam_selesai])
-                    ->orWhere(function ($q) use ($jam_mulai, $jam_selesai) {
-                        $q->where('jam_mulai', '<=', $jam_mulai)
-                            ->where('jam_selesai', '>=', $jam_selesai);
-                    });
+                $query->where('jam_mulai', '<', $jam_selesai)
+                    ->where('jam_selesai', '>', $jam_mulai);
             })
             ->exists();
     }

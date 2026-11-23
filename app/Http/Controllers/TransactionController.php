@@ -34,9 +34,7 @@ class TransactionController extends Controller
             $query->where('payment_method', $request->payment);
         }
 
-        $transactions = Transaction::with(['customer', 'lapangan', 'user'])
-            ->latest()
-            ->paginate(20);
+        $transactions = $query->latest()->paginate(20)->withQueryString();
 
         return view('transactions.index', compact('transactions'));
     }
@@ -73,7 +71,7 @@ class TransactionController extends Controller
         // Cek apakah ada transaksi yang bentrok
         $conflict = Transaction::where('lapangan_id', $lapanganId)
             ->where('tanggal_main', $tanggalMain)
-            ->where('status_booking', '!=', 'dibatalkan') // 👈 Ubah dari 'status' ke 'status_booking'
+            ->where('status_booking', '!=', 'dibatalkan')
             ->where(function ($query) use ($jamMulai, $jamSelesai) {
                 $query->where(function ($q) use ($jamMulai, $jamSelesai) {
                     // Case 1: Jam mulai booking baru berada di tengah booking lama
@@ -96,7 +94,7 @@ class TransactionController extends Controller
                             ->where('jam_selesai', '>=', $jamSelesai);
                     });
             })
-            ->get(); // 👈 Ubah dari exists() ke get() untuk debugging
+            ->get();
 
         // Debug: Log hasil query
         \Log::info('Conflicting transactions:', $conflict->toArray());
@@ -120,118 +118,91 @@ class TransactionController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'lapangan_id' => 'required|exists:lapangan,id',
             'tanggal_main' => 'required|date|after_or_equal:today',
-            'jam_mulai' => 'required',
-            'jam_selesai' => 'required|after:jam_mulai',
+            'jam_mulai' => 'required|date_format:H:i',
+            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
             'bayar' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,transfer,qris',
-            'subtotal' => 'required|numeric',
-            'discount_amount' => 'nullable|numeric',
-            'total_amount' => 'required|numeric',
-            'discount_id' => 'nullable|exists:discounts,id', // ✅ Validasi discount_id
+            'products' => 'nullable|array',
+            'products.*.product_id' => 'nullable|exists:products,id',
+            'products.*.qty' => 'nullable|integer|min:1',
+            'discount_id' => 'nullable|exists:discounts,id',
         ]);
 
-        DB::beginTransaction();
         try {
-            $lapangan = Lapangan::findOrFail($request->lapangan_id);
-
-            // Cek ketersediaan lapangan
-            if (!$lapangan->isAvailable($request->tanggal_main, $request->jam_mulai, $request->jam_selesai)) {
-                return back()->with('error', 'Lapangan tidak tersedia di waktu yang dipilih');
+            $jamMulai = Carbon::createFromFormat('H:i', $request->jam_mulai);
+            $jamSelesai = Carbon::createFromFormat('H:i', $request->jam_selesai);
+            $durasiMenit = $jamMulai->diffInMinutes($jamSelesai);
+            if ($durasiMenit % 60 !== 0) {
+                return back()->withInput()->withErrors(['jam_selesai' => 'Durasi booking harus dalam kelipatan satu jam.']);
             }
 
-            // Hitung durasi
-            // Paksa jam ke format 24 jam (H:i)
-            $jam_mulai = \Carbon\Carbon::parse($request->jam_mulai)->format('H:i');
-            $jam_selesai = \Carbon\Carbon::parse($request->jam_selesai)->format('H:i');
+            $lapangan = Lapangan::where('status', 'aktif')->findOrFail($request->lapangan_id);
+            $products = collect($request->input('products', []))->filter(fn ($item) => !empty($item['product_id']))
+                ->groupBy('product_id')->map(fn ($items) => $items->sum(fn ($item) => (int) ($item['qty'] ?? 0)));
 
-            // Hitung durasi
-            $durasi_jam = \Carbon\Carbon::parse($jam_mulai)->diffInHours(\Carbon\Carbon::parse($jam_selesai));
-
-            // Hitung subtotal lapangan
-            $subtotal_lapangan = $durasi_jam * $lapangan->harga_per_jam;
-
-            // Hitung subtotal produk
-            $subtotal_produk = 0;
-            $products = $request->input('products', []);
-
-            foreach ($products as $item) {
-                if (isset($item['product_id']) && isset($item['qty']) && $item['qty'] > 0) {
-                    $product = Product::find($item['product_id']);
-                    if ($product && $product->stok >= $item['qty']) {
-                        $subtotal_produk += $product->harga * $item['qty'];
-                    }
+            $transaction = DB::transaction(function () use ($request, $jamMulai, $jamSelesai, $durasiMenit, $lapangan, $products) {
+                $lapangan = Lapangan::whereKey($lapangan->id)->lockForUpdate()->firstOrFail();
+                if (!$lapangan->isAvailable($request->tanggal_main, $jamMulai->format('H:i:s'), $jamSelesai->format('H:i:s'))) {
+                    throw new \RuntimeException('Lapangan tidak tersedia pada waktu yang dipilih. Silakan pilih jadwal lain.');
                 }
-            }
-
-            // ✅ AMBIL DATA DISKON DARI HIDDEN INPUT (dihitung di frontend)
-            $subtotal = $request->subtotal; // Dari hidden input
-            $discountAmount = $request->discount_amount ?? 0; // Dari hidden input
-            $total = $request->total_amount; // Dari hidden input
-
-            $bayar = $request->bayar;
-            $kembalian = $bayar - $total;
-
-            if ($kembalian < 0) {
-                return back()->with('error', 'Pembayaran kurang dari total');
-            }
-
-            // Simpan transaksi
-            $transaction = Transaction::create([
-                'kode_transaksi' => Transaction::generateKodeTransaksi(),
-                'user_id' => auth()->id(),
-                'customer_id' => $request->customer_id,
-                'lapangan_id' => $request->lapangan_id,
-                'tanggal_main' => $request->tanggal_main,
-                'jam_mulai' => $jam_mulai,
-                'jam_selesai' => $jam_selesai,
-                'durasi_jam' => $durasi_jam,
-                'subtotal_lapangan' => $subtotal_lapangan,
-                'subtotal_produk' => $subtotal_produk,
-
-                // ✅ SIMPAN DISCOUNT_ID JIKA ADA
-                'discount_id' => $request->discount_id,
-                'discount_amount' => $discountAmount,
-
-                'total' => $total,
-                'bayar' => $bayar,
-                'kembalian' => $kembalian,
-                'status_booking' => 'selesai',
-                'payment_method' => $request->payment_method
-            ]);
-
-            // Simpan detail transaksi produk
-            foreach ($products as $item) {
-                if (isset($item['product_id']) && isset($item['qty']) && $item['qty'] > 0) {
-                    $product = Product::find($item['product_id']);
-
-                    if ($product && $product->stok >= $item['qty']) {
-                        TransactionDetail::create([
-                            'transaction_id' => $transaction->id,
-                            'product_id' => $product->id,
-                            'qty' => $item['qty'],
-                            'harga' => $product->harga,
-                            'subtotal' => $product->harga * $item['qty']
-                        ]);
-
-                        // Kurangi stok
-                        $product->decrement('stok', $item['qty']);
-                    }
+                $durasiJam = (int) ($durasiMenit / 60);
+                $subtotalLapangan = $durasiJam * $lapangan->harga_per_jam;
+                $subtotalProduk = 0;
+                $lockedProducts = [];
+                foreach ($products as $productId => $qty) {
+                    if ($qty < 1) throw new \RuntimeException('Jumlah produk harus minimal satu.');
+                    $product = Product::whereKey($productId)->lockForUpdate()->firstOrFail();
+                    if ($product->stok < $qty) throw new \RuntimeException("Stok {$product->nama} tidak mencukupi. Tersedia {$product->stok}.");
+                    $subtotalProduk += $product->harga * $qty;
+                    $lockedProducts[] = [$product, $qty];
                 }
-            }
 
-            DB::commit();
+                $subtotal = $subtotalLapangan + $subtotalProduk;
+                $discount = null;
+                $discountAmount = 0;
+                if ($request->filled('discount_id')) {
+                    $discount = Discount::whereKey($request->discount_id)->lockForUpdate()->firstOrFail();
+                    $valid = $discount->aktif
+                        && (!$discount->tanggal_mulai || $discount->tanggal_mulai <= $request->tanggal_main)
+                        && (!$discount->tanggal_selesai || $discount->tanggal_selesai >= $request->tanggal_main)
+                        && (!$discount->max_penggunaan || $discount->digunakan < $discount->max_penggunaan);
+                    if (!$valid) throw new \RuntimeException('Voucher sudah tidak aktif atau kuotanya habis.');
+                    $discountAmount = $discount->type === 'percent' ? $subtotal * ($discount->value / 100) : min($subtotal, $discount->value);
+                }
+                $discountAmount = round($discountAmount, 2);
+                $total = max(0, $subtotal - $discountAmount);
+                $bayar = (float) $request->bayar;
+                if ($bayar < $total) throw new \RuntimeException('Pembayaran kurang dari total tagihan.');
 
-            return redirect()->route('transactions.print', $transaction->id)
-                ->with('success', 'Transaksi berhasil dibuat dan booking telah terdaftar');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+                $trx = Transaction::create([
+                    'kode_transaksi' => Transaction::generateKodeTransaksi(),
+                    'user_id' => auth()->id(), 'customer_id' => $request->customer_id,
+                    'lapangan_id' => $lapangan->id, 'tanggal_main' => $request->tanggal_main,
+                    'jam_mulai' => $jamMulai->format('H:i:s'), 'jam_selesai' => $jamSelesai->format('H:i:s'),
+                    'durasi_jam' => $durasiJam, 'subtotal_lapangan' => $subtotalLapangan,
+                    'subtotal_produk' => $subtotalProduk, 'discount_id' => $discount?->id,
+                    'discount_type' => $discount?->type, 'discount_percent' => $subtotal > 0 ? ($discountAmount / $subtotal) * 100 : 0,
+                    'discount_amount' => $discountAmount, 'total' => $total, 'bayar' => $bayar,
+                    'kembalian' => $bayar - $total, 'status_booking' => 'selesai', 'payment_method' => $request->payment_method,
+                ]);
+                foreach ($lockedProducts as [$product, $qty]) {
+                    TransactionDetail::create(['transaction_id' => $trx->id, 'product_id' => $product->id,
+                        'qty' => $qty, 'harga' => $product->harga, 'subtotal' => $product->harga * $qty]);
+                    $product->decrement('stok', $qty);
+                }
+                if ($discount) $discount->increment('digunakan');
+                return $trx;
+            });
+
+            return redirect()->route('transactions.create')
+                ->with('created_transaction_id', $transaction->id);
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
-
     public function print($id)
     {
-        $transaction = Transaction::with(['customer', 'lapangan', 'user', 'details.product', 'discount']) // ✅ Tambah 'discount'
+        $transaction = Transaction::with(['customer', 'lapangan', 'user', 'details.product', 'discount'])
             ->findOrFail($id);
 
         return view('transactions.print', compact('transaction'));
@@ -354,7 +325,7 @@ class TransactionController extends Controller
     // Menampilkan daftar permintaan pembatalan
     public function cancelRequests()
     {
-        $transactions = Transaction::with(['customer', 'user'])
+        $transactions = Transaction::with(['customer', 'lapangan', 'user'])
             ->where('cancel_requested', true)
             ->where('status_booking', 'pending_cancel')
             ->latest()

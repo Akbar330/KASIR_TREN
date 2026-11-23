@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
+@section('title', 'Laporan Omset')
+
 @section('content')
-<div class="container-fluid px-4">
-    <h2 class="fw-bold mb-4">Laporan Omset</h2>
+<div class="report-page">
+    <div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Analitik</p><h2 class="fw-bold mb-1">Laporan omset</h2><p class="text-muted mb-0">Ringkasan pendapatan untuk periode yang dipilih.</p></div>
 
     {{-- Filter tanggal --}}
     <div class="card mb-4 shadow-sm border-0">
@@ -21,7 +23,7 @@
                 </div>
                 <div class="col-md-3">
                     <a href="{{ route('reports.export-omset', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="btn btn-success w-100">
-                        <i class="bi bi-download"></i> Export CSV
+                        <i class="fas fa-download me-2"></i>Export CSV
                     </a>
                 </div>
             </form>

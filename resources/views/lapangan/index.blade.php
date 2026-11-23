@@ -3,6 +3,7 @@
 @section('title', 'Data Lapangan')
 
 @section('content')
+    <div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Fasilitas</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Lapangan</h2><p class="text-muted mb-0">Atur tarif per jam dan status operasional setiap lapangan.</p></div>
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="fas fa-th-large me-2"></i>Data Lapangan</span>
@@ -216,7 +217,7 @@
 
 @push('scripts')
     <script>
-        function editLapangan(l) {
+        window.editLapangan = function(l) {
             $('#editLapanganForm').attr('action', '/lapangan/' + l.id);
             $('#edit_nama').val(l.nama);
             $('#edit_kategori').val(l.kategori_lapangs_id);
@@ -224,6 +225,6 @@
             $('#edit_status').val(l.status);
             $('#edit_keterangan').val(l.keterangan);
             $('#editLapanganModal').modal('show');
-        }
+        };
     </script>
 @endpush

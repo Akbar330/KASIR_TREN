@@ -3,6 +3,7 @@
 @section('title', 'Jadwal Booking')
 
 @section('content')
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4"><div><p class="text-success fw-bold small text-uppercase mb-1">Operasional lapangan</p><h2 class="fw-bold mb-1" style="letter-spacing:-.04em">Jadwal booking</h2><p class="text-muted mb-0">Pantau ketersediaan lapangan dan booking harian.</p></div><a href="{{ route('transactions.create') }}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Buat booking</a></div>
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="fas fa-calendar-alt me-2"></i>Jadwal Booking</span>
@@ -147,7 +148,7 @@
 
 @push('scripts')
     <script>
-        function updateStatus(id, status) {
+        window.updateStatus = function(id, status) {
             if (confirm('Yakin ingin mengubah status booking?')) {
                 $.ajax({
                     url: `/transactions/${id}/status`,
@@ -157,10 +158,10 @@
                         status_booking: status
                     },
                     success: function() {
-                        location.reload();
+                        window.refreshAppPage?.();
                     }
                 });
             }
-        }
+        };
     </script>
 @endpush

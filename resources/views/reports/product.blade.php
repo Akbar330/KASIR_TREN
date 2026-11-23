@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
+@section('title', 'Laporan Produk')
+
 @section('content')
-<div class="container-fluid px-4">
-    <h2 class="fw-bold mb-4">Laporan Penjualan Produk</h2>
+<div class="report-page">
+    <div class="mb-4"><p class="text-success fw-bold small text-uppercase mb-1">Analitik</p><h2 class="fw-bold mb-1">Laporan penjualan produk</h2><p class="text-muted mb-0">Pantau produk terjual dan nilai kontribusi penjualannya.</p></div>
 
     {{-- Filter tanggal --}}
     <div class="card mb-4 shadow-sm border-0">
@@ -18,7 +20,7 @@
                 </div>
                 <div class="col-md-4">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Tampilkan
+                    <i class="fas fa-filter me-2"></i>Tampilkan
                     </button>
                 </div>
             </form>

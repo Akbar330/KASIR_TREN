@@ -24,6 +24,7 @@
             width: 80mm;
             margin: 0 auto;
             padding: 10px;
+            color: #171718;
         }
 
         .header {
@@ -98,7 +99,7 @@
             top: 20px;
             right: 20px;
             padding: 10px 20px;
-            background: #007bff;
+            background: #171718;
             color: white;
             border: none;
             border-radius: 5px;
@@ -107,18 +108,36 @@
         }
 
         .btn-print:hover {
-            background: #0056b3;
+            background: #303035;
+        }
+
+        .btn-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            color: #171718;
+            background: #fff;
+            border: 1px solid #e6e9f2;
+            border-radius: 5px;
+            text-decoration: none;
+            font: 14px Arial, sans-serif;
+        }
+
+        .btn-back:hover {
+            color: #171718;
+            background: #f4f5f7;
         }
     </style>
 </head>
 
 <body>
-    <button class="btn-print no-print" onclick="window.print()">🖨️ Print Struk</button>
+    <a class="btn-back no-print" href="{{ route('transactions.create') }}">Kembali</a>
+    <button class="btn-print no-print" onclick="window.print()">Cetak struk</button>
 
     <div class="header">
         <h2>FUTSAL BOOKING</h2>
-        <p>Jl. Contoh No. 123, Sumedang</p>
-        <p>Telp: 0812-3456-7890</p>
+        <p>NOTA PEMBAYARAN & BOOKING</p>
     </div>
 
     <div class="info-row">
@@ -208,11 +227,11 @@
             <span><strong>Rp {{ number_format($transaction->subtotal_produk, 0, ',', '.') }}</strong></span>
         </div>
 
-        {{-- 🧾 Tambahan: Diskon --}}
+
         @if ($transaction->discount_id && $transaction->discount_amount > 0)
             <div class="divider"></div>
-            <div class="info-row" style="font-weight: bold; color: #28a745;">
-                <span>💰 DISKON DIGUNAKAN</span>
+            <div class="info-row" style="font-weight: bold; color: #4a6de0;">
+                <span>VOUCHER DIGUNAKAN</span>
             </div>
             <div class="info-row">
                 <span>Kode Voucher</span>
@@ -261,7 +280,7 @@
         <p><strong>TERIMA KASIH</strong></p>
         <p>Harap datang 10 menit sebelum jadwal</p>
         <p>Simpan struk ini sebagai bukti booking</p>
-        <p style="margin-top: 10px;">www.futsalbooking.com</p>
+
     </div>
 
 </body>
